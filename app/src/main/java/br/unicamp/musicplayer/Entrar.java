@@ -72,12 +72,11 @@ public class Entrar extends AppCompatActivity {
         });
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
-            FirebaseUser mFirebaseUser = mFirebase
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
 
             }
-        }
+        };
     }
 
     private boolean validateEmail(){
