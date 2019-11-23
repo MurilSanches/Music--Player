@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "291503816975",
+    "firebase_url": "https://musicplayer-dd1bf.firebaseio.com",
+    "project_id": "musicplayer-dd1bf",
+    "storage_bucket": "musicplayer-dd1bf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:291503816975:android:390582def51fc51c77fe7a",
+        "android_client_info": {
+          "package_name": "br.unicamp.musicplayer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "291503816975-hgst0f369fjhh7ndur04vrkqsd09g57r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.unicamp.musicplayer",
+            "certificate_hash": "5afe39ec46449236500c07313ddea59850b514de"
+          }
+        },
+        {
+          "client_id": "291503816975-cq9s4dicgtfk3flple7cn7d1htmn6kpi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8vMLjrtXVTKvOzJ30EcholYK-mo9yCaU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "291503816975-cq9s4dicgtfk3flple7cn7d1htmn6kpi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

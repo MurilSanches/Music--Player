@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="br.unicamp.musicplayer.Musicas"
+    android:orientation="vertical"
+    android:background="@color/cardview_dark_background">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+
+        <TextView
+            android:layout_marginTop="20dp"
+            android:id="@+id/tvMusicas"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Musicas"
+            android:textSize="20dp"
+            android:layout_marginRight="30dp"
+            android:background="?attr/selectableItemBackground"
+            android:textColor="@color/cardview_light_background"
+            android:layout_marginBottom="20dp">
+        </TextView>
+        <TextView
+            android:layout_marginTop="20dp"
+            android:id="@+id/tvLetra"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Letra"
+            android:textSize="20dp"
+            android:textColor="@color/cardview_light_background"
+            android:layout_marginBottom="20dp">
+        </TextView>
+        <TextView
+            android:layout_marginTop="20dp"
+            android:id="@+id/tvFila"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Fila"
+            android:textSize="20dp"
+            android:layout_marginLeft="30dp"
+            android:textColor="@color/cardview_light_background"
+            android:layout_marginBottom="20dp">
+        </TextView>
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/lvMusicas"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:background="@color/colorGREY">
+
+
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="20"
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:id="@+id/ivImagemMusica"
+                    android:layout_margin="10dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/download">
+                </ImageView>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="60"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTituloMusica"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nome Musica"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="20dp"
+                    android:textColor="@color/cardview_light_background"
+                    android:textSize="20dp"></TextView>
+
+                <TextView
+                    android:id="@+id/tvArtista"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Artista"
+                    android:layout_marginLeft="10dp"
+                    android:textColor="@color/cardview_light_background"
+                    android:textSize="18dp"></TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="20"
+                android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/ivPause"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:src="@drawable/pause"
+>
+            </ImageView>
+        </LinearLayout>
+
+
+        </LinearLayout>
+        <SeekBar
+            android:id="@+id/sbAudio"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorGREY"/>
+    </LinearLayout>
+
+</LinearLayout>
