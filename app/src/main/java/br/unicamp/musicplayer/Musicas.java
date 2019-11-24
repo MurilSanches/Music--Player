@@ -28,6 +28,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.musicplayer.R;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.r0adkll.slidr.model.SlidrInterface;
 
 import java.io.File;
@@ -36,30 +37,24 @@ import java.util.ArrayList;
 public class Musicas extends AppCompatActivity {
 
     private static final int MY_PERMISSION_REQUEST = 1;
-
-    ListView lvMusicas;
-    String[] items;
-    ArrayList<String> musicas, titulo = new ArrayList<>(), artista = new ArrayList<>();
-    private SlidrInterface slidr;
-    ArrayList<String> musicFilesList = new ArrayList<>();
-    ArrayList<String> albumArt = new ArrayList<>();
-    String currentArt, currentSong;
-
-    TextView tvLetras,
-            tvMusicas,
-            tvFila;
-    SeekBar seekbar;
-
-    Thread updateSeekBar;
-
+    private ListView lvMusicas;
+    private ArrayList<String> musicas, titulo, artista, musicFilesList, albumArt;
+    private String currentArt, currentSong;
+    private TextView tvLetras, tvMusicas, tvFila, tvUsuario;
+    private int currentPosition;
+    private SeekBar seekbar;
+    private Thread updateSeekBar;
     MediaPlayer mp;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_musicas);
+
+        titulo  = new ArrayList<>();
+        artista = new ArrayList<>();
+        musicFilesList = new ArrayList<>();
+        albumArt = new ArrayList<>();
 
         seekbar = findViewById(R.id.sbAudio);
 
@@ -75,24 +70,37 @@ public class Musicas extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 mp.seekTo(seekBar.getProgress());
-
             }
         });
 
         lvMusicas = findViewById(R.id.lvMusicas);
         tvFila = findViewById(R.id.tvFila);
         tvLetras = findViewById(R.id.tvLetra);
+        tvUsuario = findViewById(R.id.tvUsuario);
 
         tvMusicas = (TextView) findViewById(R.id.tvMusicas);
         SpannableString content = new SpannableString("Musicas");
         content.setSpan(new UnderlineSpan(), 0, content.length(), 0);
         tvMusicas.setText(content);
 
+        Intent i = getIntent();
+        Bundle b = i.getExtras();
+
+        final GoogleSignInAccount account =  (GoogleSignInAccount) b.get("acc");
+        tvUsuario.setText("Bem  vindo, " + account.getDisplayName());
+
         tvLetras.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(Musicas.this, Letras.class);
-                i.putExtra("art", currentArt).putExtra("mus", currentSong);
+                if(mp.isPlaying()) {
+                    mp.pause();
+                    i.putExtra("art", currentArt).putExtra("mus", currentSong)
+                            .putExtra("songs", musicFilesList).putExtra("duration", mp.getDuration())
+                            .putExtra("pos", currentPosition).putExtra("albuns", albumArt)
+                            .putExtra("titles", titulo).putExtra("artists", artista);
+                }
+                i.putExtra("acc", account);
                 startActivity(i);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
@@ -101,7 +109,7 @@ public class Musicas extends AppCompatActivity {
         tvFila.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Musicas.this, Fila.class);
+                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account);
                 startActivity(i);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
@@ -139,7 +147,6 @@ public class Musicas extends AppCompatActivity {
                 }
             }
         });
-
     }
 
 
@@ -189,11 +196,13 @@ public class Musicas extends AppCompatActivity {
                             }
                         }
                     };
-
+                    tvTitulo.setText(titulo.get(position));
                     tvArtista.setText(artista.get(position));
+
+                    currentPosition = position;
                     currentArt = artista.get(position);
                     currentSong = titulo.get(position);
-                    tvTitulo.setText(titulo.get(position));
+
                     mp = MediaPlayer.create(getApplicationContext(), u);
                     mp.start();
                     seekbar.setMax(mp.getDuration());
@@ -220,7 +229,6 @@ public class Musicas extends AppCompatActivity {
             int songArtist = songCursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
             int songLocation = songCursor.getColumnIndex(MediaStore.Audio.Media.DATA);
             int songAlbum = songCursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART);
-
 
             do{
                 String currentTitle = songCursor.getString(songTitle);
