@@ -6,6 +6,7 @@ import android.text.SpannableString;
 import android.text.style.UnderlineSpan;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,9 +14,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.musicplayer.R;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 
+import java.util.ArrayList;
+
 public class Fila extends AppCompatActivity {
 
     private TextView tvLetras, tvMusicas, tvFila, tvUsuario;
+    private ListView lvMusicas;
+    private ArrayList<String> fila;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +30,7 @@ public class Fila extends AppCompatActivity {
         tvLetras = findViewById(R.id.tvLetra);
         tvMusicas = findViewById(R.id.tvMusicas);
         tvUsuario = findViewById(R.id.tvUsuario);
+        lvMusicas = findViewById(R.id.lvMusicas);
 
         tvFila = (TextView) findViewById(R.id.tvFila);
         SpannableString content = new SpannableString("Fila");
@@ -40,9 +46,9 @@ public class Fila extends AppCompatActivity {
         tvMusicas.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Fila.this, Musicas.class).putExtra("acc", account);
-                startActivity(i);
-                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+            Intent i = new Intent(Fila.this, Musicas.class).putExtra("acc", account);
+            startActivity(i);
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
             }
         });
 
@@ -54,6 +60,10 @@ public class Fila extends AppCompatActivity {
                 overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
             }
         });
+
+        fila = b.getStringArrayList("fila");
+        FilaAdapter adapter = new FilaAdapter(this, fila);
+        lvMusicas.setAdapter(adapter);
     }
 
     @Override

@@ -55,7 +55,7 @@ public class Letras extends AppCompatActivity {
             content.setSpan(new UnderlineSpan(), 0, content.length(), 0);
             tvLetras.setText(content);
 
-            seekbar = findViewById(R.id.seekBar);
+            seekbar = findViewById(R.id.sbAudio);
 
             seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override

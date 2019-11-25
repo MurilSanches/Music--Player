@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,9 +15,12 @@ import android.provider.MediaStore;
 import android.text.SpannableString;
 import android.text.style.UnderlineSpan;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -38,13 +42,13 @@ public class Musicas extends AppCompatActivity {
 
     private static final int MY_PERMISSION_REQUEST = 1;
     private ListView lvMusicas;
-    private ArrayList<String> musicas, titulo, artista, musicFilesList, albumArt;
+    private ArrayList<String> musicas, titulo, artista, musicFilesList, albumArt, fila;
     private String currentArt, currentSong;
-    private TextView tvLetras, tvMusicas, tvFila, tvUsuario;
-    private int currentPosition;
+    private TextView tvLetras, tvMusicas, tvFila, tvUsuario, tvTitulo, tvArtista;
+    private int currentPosition, proxima = 0;
     private SeekBar seekbar;
-    private Thread updateSeekBar;
-    MediaPlayer mp;
+    private MediaPlayer mp;
+    private ImageView ivAlbum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +59,9 @@ public class Musicas extends AppCompatActivity {
         artista = new ArrayList<>();
         musicFilesList = new ArrayList<>();
         albumArt = new ArrayList<>();
+        fila = new ArrayList<>();
+
+        ivAlbum = findViewById(R.id.ivImagemMusica);
 
         seekbar = findViewById(R.id.sbAudio);
 
@@ -69,10 +76,13 @@ public class Musicas extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mp.seekTo(seekBar.getProgress());
+                if(mp != null)
+                    mp.seekTo(seekBar.getProgress());
             }
         });
 
+        tvTitulo = findViewById(R.id.tvTituloMusica );
+        tvArtista = findViewById(R.id.tvArtista);
         lvMusicas = findViewById(R.id.lvMusicas);
         tvFila = findViewById(R.id.tvFila);
         tvLetras = findViewById(R.id.tvLetra);
@@ -93,7 +103,7 @@ public class Musicas extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(Musicas.this, Letras.class);
-                if(mp.isPlaying()) {
+                if(mp != null && mp.isPlaying()) {
                     mp.pause();
                     i.putExtra("art", currentArt).putExtra("mus", currentSong)
                             .putExtra("songs", musicFilesList).putExtra("duration", mp.getDuration())
@@ -109,7 +119,8 @@ public class Musicas extends AppCompatActivity {
         tvFila.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account);
+                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account)
+                        .putExtra("fila", fila);
                 startActivity(i);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
@@ -155,68 +166,110 @@ public class Musicas extends AppCompatActivity {
     {
         musicas = new ArrayList<>();
         getMusic();
-        ArrayAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, musicas);
+        MusicaAdapter adapter = new MusicaAdapter(this, musicas);
         lvMusicas.setAdapter(adapter);
-        final ImageView ivAlbum = findViewById(R.id.ivImagemMusica);
-        final TextView tvTitulo  = findViewById(R.id.tvTituloMusica);
-        final TextView tvArtista = findViewById(R.id.tvArtista);
 
         lvMusicas.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                try{
-                    if(mp != null)
-                        if (mp.isPlaying())
-                            mp.pause();
-
-                    Uri u = Uri.parse(musicFilesList.get(position));
-                    if(albumArt.get(position) != "")
-                    {
-                        File imgfile = new File(albumArt.get(position));
-                        Bitmap myBitmap = BitmapFactory.decodeFile(imgfile.getAbsolutePath());
-
-                        ivAlbum.setImageBitmap(myBitmap);
+            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                final ImageView ivAdd = view.findViewById(R.id.ivAdiciona);
+                ivAdd.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(getBaseContext(), "Musica adiciona na fila", Toast.LENGTH_SHORT).show();
+                        fila.add(musicas.get(position));
                     }
-                    seekbar.setVisibility(View.VISIBLE);
+                });
 
-                    updateSeekBar=new Thread(){
-                        @Override
-                        public void run(){
-                            int totalDuration = mp.getDuration();
-                            int currentPosition = 0;
-                            while(currentPosition < totalDuration){
-                                try{
-                                    sleep(500);
-                                    currentPosition=mp.getCurrentPosition();
-                                    seekbar.setProgress(currentPosition);
-                                }
-                                catch (InterruptedException e){
-
-                                }
-                            }
-                        }
-                    };
-                    tvTitulo.setText(titulo.get(position));
-                    tvArtista.setText(artista.get(position));
-
-                    currentPosition = position;
-                    currentArt = artista.get(position);
-                    currentSong = titulo.get(position);
-
-                    mp = MediaPlayer.create(getApplicationContext(), u);
-                    mp.start();
-                    seekbar.setMax(mp.getDuration());
-                    updateSeekBar.start();
-                }
-                catch(Exception e)
-                {
-                    e.printStackTrace();
-                }
+                final LinearLayout llTitulo = view.findViewById(R.id.llTitulo);
+                llTitulo.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        playMusic(position);
+                    }
+                });
             }
         });
     }
 
+    public void playMusic(int position){
+        try {
+            if (mp != null)
+                if (mp.isPlaying())
+                    mp.pause();
 
+            Uri u = Uri.parse(musicFilesList.get(position));
+            if (albumArt.get(position) != "") {
+                File imgfile = new File(albumArt.get(position));
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgfile.getAbsolutePath());
+
+                ivAlbum.setImageBitmap(myBitmap);
+            }
+            seekbar.setVisibility(View.VISIBLE);
+
+            Thread updateSeekBar = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        int totalDuration = mp.getDuration();
+                        int currentPosition = 0;
+                        while (currentPosition < totalDuration) {
+                            try {
+                                sleep(500);
+                                currentPosition = mp.getCurrentPosition();
+                                seekbar.setProgress(currentPosition);
+                            } catch (InterruptedException e) {
+
+                            }
+                        }
+                        seekbar.setProgress(0);
+                        if (currentPosition >= totalDuration && fila.size() > 0) {
+                            String song = fila.get(proxima);
+                            fila.remove(proxima);
+                            proxima++;
+                            int pos = getMusicPosition(song);
+                            playMusic(pos);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            tvTitulo.setText(titulo.get(position));
+            tvArtista.setText(artista.get(position));
+
+            currentPosition = position;
+            currentArt = artista.get(position);
+            currentSong = titulo.get(position);
+
+            mp = MediaPlayer.create(getApplicationContext(), u);
+            mp.start();
+            seekbar.setMax(mp.getDuration());
+            updateSeekBar.start();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public int getMusicPosition(String song)
+    {
+        for(int i = 0; i < musicas.size(); i++)
+            if(song == musicas.get(i))
+                return i;
+        return -1;
+    }
+
+    public String getMusicFile(String song)
+    {
+        for(int i = 0; i < musicFilesList.size(); i++)
+            if (song == musicas.get(i))
+                return  musicFilesList.get(i);
+        return "";
+    }
 
     public void getMusic(){
         ContentResolver contentResolver = getContentResolver();
