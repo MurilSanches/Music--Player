@@ -111,7 +111,8 @@
                 android:layout_width="0dp"
                 android:layout_weight="60"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginTop="10dp">
 
                 <TextView
                     android:id="@+id/tvTituloMusica"
@@ -119,7 +120,6 @@
                     android:layout_height="wrap_content"
                     android:text="Nome Musica"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="20dp"
                     android:textColor="@color/cardview_light_background"
                     android:textSize="20dp"></TextView>
 
@@ -136,12 +136,14 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_weight="20"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:layout_marginRight="5dp">
 
             <ImageView
                 android:id="@+id/ivPause"
                 android:layout_width="match_parent"
-                android:layout_height="70dp"
+                android:layout_height="50dp"
                 android:src="@drawable/pause"
 >
             </ImageView>

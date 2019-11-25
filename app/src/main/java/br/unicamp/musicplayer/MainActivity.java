@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
             updateUI(acct);
         } else {
             // Signed out, show unauthenticated UI.
-            Toast.makeText(getBaseContext(), "Erro", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), "Erro ao entrar com a conta do google", Toast.LENGTH_SHORT).show();
         }
     }
 }

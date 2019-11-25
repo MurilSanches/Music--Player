@@ -19,7 +19,7 @@
                 android:id="@+id/txtTitulo"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="50dp"
+                android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:text="Bem vindo!"
                 android:textSize="30dp"
@@ -40,7 +40,7 @@
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="50dp"
+            android:layout_marginTop="20dp"
             android:src="@mipmap/ic_background_nota_foreground">
 
         </ImageView>
@@ -86,7 +86,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_marginTop="50dp"
+            android:layout_marginTop="30dp"
             android:gravity="center">
             <TextView
 

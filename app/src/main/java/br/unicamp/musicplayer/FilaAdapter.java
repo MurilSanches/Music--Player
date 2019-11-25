@@ -11,14 +11,17 @@ import androidx.annotation.NonNull;
 
 import com.example.musicplayer.R;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 public class FilaAdapter extends ArrayAdapter<String>
 {
     private Context context;
-    private List<String> songs;
+    private Queue<String> songs;
 
-    public FilaAdapter(@NonNull Context context, @NonNull List<String> songs)
+    public FilaAdapter(@NonNull Context context, @NonNull LinkedList<String> songs)
     {
         super(context,  0, songs);
         this.songs = songs;
@@ -28,12 +31,12 @@ public class FilaAdapter extends ArrayAdapter<String>
     @Override
     public View getView(int position, View view, ViewGroup parent)
     {
-    String s = songs.get(position);
-    view = LayoutInflater.from(context).inflate(R.layout.activity_lista_fila, null);
+        String s = songs.remove();
+        view = LayoutInflater.from(context).inflate(R.layout.activity_lista_fila, null);
 
-    TextView tvTitle = view.findViewById(R.id.tvTitulo);
-    tvTitle.setText(songs.get(position));
+        TextView tvTitle = view.findViewById(R.id.tvTitulo);
+        tvTitle.setText(s);
 
-    return view;
+        return view;
     }
 }

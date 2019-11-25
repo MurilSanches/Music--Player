@@ -11,6 +11,7 @@ import android.media.Image;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.text.SpannableString;
 import android.text.style.UnderlineSpan;
@@ -37,18 +38,23 @@ import com.r0adkll.slidr.model.SlidrInterface;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Musicas extends AppCompatActivity {
 
     private static final int MY_PERMISSION_REQUEST = 1;
     private ListView lvMusicas;
-    private ArrayList<String> musicas, titulo, artista, musicFilesList, albumArt, fila;
+    private ArrayList<String> musicas, titulo, artista, musicFilesList, albumArt;
+    private Queue<String> fila;
     private String currentArt, currentSong;
     private TextView tvLetras, tvMusicas, tvFila, tvUsuario, tvTitulo, tvArtista;
-    private int currentPosition, proxima = 0;
     private SeekBar seekbar;
     private MediaPlayer mp;
     private ImageView ivAlbum;
+    private Thread updateSeekBar;
+    private ImageView pause;
+    private String STATUS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,12 +65,13 @@ public class Musicas extends AppCompatActivity {
         artista = new ArrayList<>();
         musicFilesList = new ArrayList<>();
         albumArt = new ArrayList<>();
-        fila = new ArrayList<>();
+        fila = new LinkedList<>();
 
+        pause = findViewById(R.id.ivPause);
         ivAlbum = findViewById(R.id.ivImagemMusica);
 
         seekbar = findViewById(R.id.sbAudio);
-
+        seekbar.setVisibility(View.VISIBLE);
         seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -104,11 +111,8 @@ public class Musicas extends AppCompatActivity {
             public void onClick(View v) {
                 Intent i = new Intent(Musicas.this, Letras.class);
                 if(mp != null && mp.isPlaying()) {
-                    mp.pause();
                     i.putExtra("art", currentArt).putExtra("mus", currentSong)
-                            .putExtra("songs", musicFilesList).putExtra("duration", mp.getDuration())
-                            .putExtra("pos", currentPosition).putExtra("albuns", albumArt)
-                            .putExtra("titles", titulo).putExtra("artists", artista);
+                            .putExtra("media", (Parcelable) mp).putExtra("fila", (Parcelable) fila);
                 }
                 i.putExtra("acc", account);
                 startActivity(i);
@@ -119,8 +123,12 @@ public class Musicas extends AppCompatActivity {
         tvFila.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account)
-                        .putExtra("fila", fila);
+                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account);
+                if(mp != null && mp.isPlaying()) {
+                    i.putExtra("art", currentArt).putExtra("mus", currentSong)
+                            .putExtra("media", (Parcelable) mp).putExtra("fila", (Parcelable) fila)
+                            .putExtra("status", STATUS);
+                }
                 startActivity(i);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
@@ -141,23 +149,66 @@ public class Musicas extends AppCompatActivity {
             doStuff();
         }
 
-        ImageView pause = findViewById(R.id.ivPause);
         pause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mp != null) {
                     ImageView iv = findViewById(R.id.ivPause);
                     if(mp.isPlaying()) {
+                        Toast.makeText(getBaseContext(), "Musica Pausada", Toast.LENGTH_SHORT).show();
                         mp.pause();
+                        STATUS = "PAUSE";
                         iv.setImageResource(R.drawable.play);
                     }
                     else {
                         mp.start();
+                        Toast.makeText(getBaseContext(), "Tocando Musica", Toast.LENGTH_SHORT).show();
+                        STATUS = "PLAY";
                         iv.setImageResource(R.drawable.pause);
                     }
                 }
             }
         });
+
+        updateSeekBar = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    do {
+
+                        int totalDuration = mp.getDuration();
+                        int currentPosition = 0, lastPosition = -1;
+
+                        while (currentPosition < totalDuration) {
+                            try {
+                                sleep(500);
+                                currentPosition = mp.getCurrentPosition();
+                                seekbar.setProgress(currentPosition);
+                                if(!mp.isPlaying() && !STATUS.equals("PAUSE") && currentPosition == lastPosition)
+                                    break;
+                                lastPosition = currentPosition;
+                            }
+                            catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        seekbar.setProgress(0);
+                        if (fila.size() > 0) {
+                            String song = fila.remove();
+
+                            int pos = getMusicPosition(song);
+                            playMusic(pos);
+                        }
+                    }
+                    while (mp.isPlaying());
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        };
+
     }
 
 
@@ -176,7 +227,7 @@ public class Musicas extends AppCompatActivity {
                 ivAdd.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast.makeText(getBaseContext(), "Musica adiciona na fila", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getBaseContext(), "Musica adicionada na fila", Toast.LENGTH_SHORT).show();
                         fila.add(musicas.get(position));
                     }
                 });
@@ -185,6 +236,9 @@ public class Musicas extends AppCompatActivity {
                 llTitulo.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        Toast.makeText(getBaseContext(), "Tocando musica " + titulo.get(position), Toast.LENGTH_SHORT).show();
+                        tvArtista.setText(artista.get(position));
+                        tvTitulo.setText(titulo.get(position));
                         playMusic(position);
                     }
                 });
@@ -195,59 +249,28 @@ public class Musicas extends AppCompatActivity {
     public void playMusic(int position){
         try {
             if (mp != null)
-                if (mp.isPlaying())
-                    mp.pause();
+                if (mp.isPlaying()) {
+                    mp.stop();
+                    mp.release();
+                }
 
             Uri u = Uri.parse(musicFilesList.get(position));
+            pause.setImageResource(R.drawable.pause);
             if (albumArt.get(position) != "") {
                 File imgfile = new File(albumArt.get(position));
                 Bitmap myBitmap = BitmapFactory.decodeFile(imgfile.getAbsolutePath());
 
                 ivAlbum.setImageBitmap(myBitmap);
             }
-            seekbar.setVisibility(View.VISIBLE);
-
-            Thread updateSeekBar = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        int totalDuration = mp.getDuration();
-                        int currentPosition = 0;
-                        while (currentPosition < totalDuration) {
-                            try {
-                                sleep(500);
-                                currentPosition = mp.getCurrentPosition();
-                                seekbar.setProgress(currentPosition);
-                            } catch (InterruptedException e) {
-
-                            }
-                        }
-                        seekbar.setProgress(0);
-                        if (currentPosition >= totalDuration && fila.size() > 0) {
-                            String song = fila.get(proxima);
-                            fila.remove(proxima);
-                            proxima++;
-                            int pos = getMusicPosition(song);
-                            playMusic(pos);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-            };
-            tvTitulo.setText(titulo.get(position));
-            tvArtista.setText(artista.get(position));
-
-            currentPosition = position;
             currentArt = artista.get(position);
             currentSong = titulo.get(position);
 
             mp = MediaPlayer.create(getApplicationContext(), u);
             mp.start();
             seekbar.setMax(mp.getDuration());
-            updateSeekBar.start();
+            if(updateSeekBar.getState().toString().equals("NEW"))
+                updateSeekBar.start();
+            STATUS = "PLAY";
         }
         catch (Exception e)
         {
