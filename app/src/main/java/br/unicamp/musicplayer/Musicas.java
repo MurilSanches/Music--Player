@@ -57,6 +57,7 @@ public class Musicas extends AppCompatActivity {
     private Thread updateSeekBar;
     private ImageView pause;
     private String STATUS;
+    private int currentPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,10 +112,18 @@ public class Musicas extends AppCompatActivity {
         tvLetras.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Musicas.this, Letras.class);
+                ArrayList<String> f = new ArrayList<>();
+                while (fila.size()>0)
+                    f.add(fila.remove());
+
+                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account)
+                        .putExtra("status", STATUS).putExtra("fila", f)
+                        .putExtra("musicFile", musicFilesList).putExtra("art", currentArt)
+                        .putExtra("titles", titles).putExtra("albuns", albunsArt)
+                        .putExtra("songs", musicas).putExtra("activity_name", this.getClass().getName())
+                        .putExtra("duration", mp.getDuration()).putExtra("pos", currentPosition);
                 if(mp != null && mp.isPlaying()) {
-                    i.putExtra("art", currentArt).putExtra("mus", currentSong)
-                            .putExtra("media", (Parcelable) mp).putExtra("fila", (Parcelable) fila);
+                    i.putExtra("mus", currentSong).putExtra("arts", artists);
                 }
                 i.putExtra("acc", account);
                 startActivityForResult(i, 2);
@@ -273,6 +282,7 @@ public class Musicas extends AppCompatActivity {
             }
             currentArt = artists.get(position);
             currentSong = titles.get(position);
+            currentPosition = position;
 
             mp = MediaPlayer.create(getApplicationContext(), u);
             mp.start();

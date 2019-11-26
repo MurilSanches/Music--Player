@@ -14,6 +14,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -34,10 +35,15 @@ import java.util.ArrayList;
 public class Letras extends AppCompatActivity {
 
     private TextView tvLetras, tvMusicas, tvFila, tvLetra, tvUsuario, tvArtista, tvTitulo;
+    private ArrayList<String> musicFile, artists, titles, songs, albuns;
+    private String currentArt, currentSong;
+    private int currentPosition;
     private Thread updateSeekBar;
     private MediaPlayer mp;
     private SeekBar seekbar;
-    private ImageView ivAlbum;
+    private ImageView ivAlbum, ivPause;
+    private String className;
+    private String STATUS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +55,7 @@ public class Letras extends AppCompatActivity {
             tvMusicas = findViewById(R.id.tvMusicas);
             tvUsuario = findViewById(R.id.tvUsuario);
             ivAlbum = findViewById(R.id.ivImagemMusica);
+            ivPause = findViewById(R.id.ivPause);
 
             tvLetras = (TextView) findViewById(R.id.tvLetra);
             SpannableString content = new SpannableString("Letra");
@@ -79,8 +86,31 @@ public class Letras extends AppCompatActivity {
             Intent i = getIntent();
             Bundle b = i.getExtras();
 
+            className = b.getString("activity_name");
+
             final GoogleSignInAccount account = (GoogleSignInAccount) b.get("acc");
             tvUsuario.setText("Bem vindo, " + account.getDisplayName());
+
+            ivPause.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(mp != null) {
+                        ImageView iv = findViewById(R.id.ivPause);
+                        if(mp.isPlaying()) {
+                            Toast.makeText(getBaseContext(), "Musica Pausada", Toast.LENGTH_SHORT).show();
+                            mp.pause();
+                            STATUS = "PAUSE";
+                            iv.setImageResource(R.drawable.play);
+                        }
+                        else {
+                            mp.start();
+                            Toast.makeText(getBaseContext(), "Tocando Musica", Toast.LENGTH_SHORT).show();
+                            STATUS = "PLAY";
+                            iv.setImageResource(R.drawable.pause);
+                        }
+                    }
+                }
+            });
 
             tvMusicas.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -103,22 +133,29 @@ public class Letras extends AppCompatActivity {
             tvLetra = findViewById(R.id.tvLetraDaMusica);
             tvLetra.setMovementMethod(new ScrollingMovementMethod());
 
-            if (b.getString("art") != null && !b.getString("art").equals("") &&
-                    b.getString("mus") != null && !b.getString("mus").equals("")) {
 
-                String art = b.getString("art");
-                String mus = b.getString("mus");
+            if(!b.isEmpty()){
 
-                ArrayList<String> songs = b.getStringArrayList("songs");
-                ArrayList<String> albuns = b.getStringArrayList("albuns");
-                ArrayList<String> titles = b.getStringArrayList("titles");
-                ArrayList<String> artists = b.getStringArrayList("artists");
+                if(className.equals("br.unicamp.musicplayer.Musicas$3")) {
+                    String art = b.getString("art");
+                    String mus = b.getString("mus");
 
-                int duration = b.getInt("duration");
-                int pos = b.getInt("pos");
+                    songs = b.getStringArrayList("songs");
+                    albuns = b.getStringArrayList("albuns");
+                    titles = b.getStringArrayList("titles");
+                    artists = b.getStringArrayList("arts");
+                    musicFile = b.getStringArrayList("musicFile");
+                    STATUS = b.getString("status");
 
-                pesquisarMusica(art, mus);
-                tocarMusica(songs, albuns, titles, artists, duration, pos);
+                    int duration = b.getInt("duration");
+                    int pos = b.getInt("pos");
+
+                    if(!STATUS.equals("NO MUSIC")){
+                        pesquisarMusica(art, mus);
+                        tocarMusica(songs, albuns, titles, artists, duration, pos);
+                    }
+                }
+
             }
 
             ImageView pause = findViewById(R.id.ivPause);
@@ -145,43 +182,37 @@ public class Letras extends AppCompatActivity {
         }
     }
 
-    private void tocarMusica(ArrayList<String> songs, ArrayList<String> albumArt, ArrayList<String> titles, ArrayList<String> artists,int duration, int position){
-        Uri u = Uri.parse(songs.get(position));
-        if(albumArt.get(position) != "")
-        {
-            File imgfile = new File(albumArt.get(position));
-            Bitmap myBitmap = BitmapFactory.decodeFile(imgfile.getAbsolutePath());
-
-            ivAlbum.setImageBitmap(myBitmap);
-        }
-        seekbar.setVisibility(View.VISIBLE);
-
-        updateSeekBar=new Thread(){
-            @Override
-            public void run(){
-                int totalDuration = mp.getDuration();
-                int currentPosition = 0;
-                while(currentPosition < totalDuration){
-                    try{
-                        sleep(500);
-                        currentPosition=mp.getCurrentPosition();
-                        seekbar.setProgress(currentPosition);
-                    }
-                    catch (InterruptedException e){
-
-                    }
+    private void tocarMusica(ArrayList<String> songs, ArrayList<String> albumArt, ArrayList<String> titles, ArrayList<String> artists, int duration, int position){
+        try {
+            if (mp != null)
+                if (mp.isPlaying()) {
+                    mp.stop();
+                    mp.release();
                 }
+
+            Uri u = Uri.parse(musicFile.get(position));
+            ivPause.setImageResource(R.drawable.pause);
+            if (albuns.get(position) != "") {
+                File imgfile = new File(albuns.get(position));
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgfile.getAbsolutePath());
+
+                ivAlbum.setImageBitmap(myBitmap);
             }
-        };
+            currentArt = artists.get(position);
+            currentSong = titles.get(position);
+            currentPosition = position;
 
-        tvTitulo.setText(titles.get(position));
-        tvArtista.setText(artists.get(position));
-
-        mp = MediaPlayer.create(getApplicationContext(), u);
-        mp.start();
-        mp.seekTo(duration);
-        seekbar.setMax(mp.getDuration());
-        updateSeekBar.start();
+            mp = MediaPlayer.create(getApplicationContext(), u);
+            mp.start();
+            seekbar.setMax(mp.getDuration());
+            if(updateSeekBar.getState().toString().equals("NEW"))
+                updateSeekBar.start();
+            STATUS = "PLAY";
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private void pesquisarMusica(String art, String mus)

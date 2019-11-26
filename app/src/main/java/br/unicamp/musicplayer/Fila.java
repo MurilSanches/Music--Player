@@ -108,7 +108,7 @@ public class Fila extends AppCompatActivity {
                     albunsArt = b.getStringArrayList("albuns");
                     musicFilesList = b.getStringArrayList("musicFile");
                     STATUS = b.getString("status");
-                    if (STATUS != "NO MUSIC") {
+                    if (!STATUS.equals("NO MUSIC")) {
                         currentArt = b.getString("art");
                         currentSong = b.getString("mus");
                     }
