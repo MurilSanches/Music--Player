@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -37,6 +38,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.r0adkll.slidr.model.SlidrInterface;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -45,8 +47,8 @@ public class Musicas extends AppCompatActivity {
 
     private static final int MY_PERMISSION_REQUEST = 1;
     private ListView lvMusicas;
-    private ArrayList<String> musicas, titulo, artista, musicFilesList, albumArt;
-    private Queue<String> fila;
+    private ArrayList<String> musicas, titles, artists, musicFilesList, albunsArt;
+    private LinkedList<String> fila;
     private String currentArt, currentSong;
     private TextView tvLetras, tvMusicas, tvFila, tvUsuario, tvTitulo, tvArtista;
     private SeekBar seekbar;
@@ -61,10 +63,10 @@ public class Musicas extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_musicas);
 
-        titulo  = new ArrayList<>();
-        artista = new ArrayList<>();
+        titles  = new ArrayList<>();
+        artists = new ArrayList<>();
         musicFilesList = new ArrayList<>();
-        albumArt = new ArrayList<>();
+        albunsArt = new ArrayList<>();
         fila = new LinkedList<>();
 
         pause = findViewById(R.id.ivPause);
@@ -115,7 +117,7 @@ public class Musicas extends AppCompatActivity {
                             .putExtra("media", (Parcelable) mp).putExtra("fila", (Parcelable) fila);
                 }
                 i.putExtra("acc", account);
-                startActivity(i);
+                startActivityForResult(i, 2);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
         });
@@ -123,13 +125,19 @@ public class Musicas extends AppCompatActivity {
         tvFila.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account);
+                ArrayList<String> f = new ArrayList<>();
+                while (fila.size()>0)
+                    f.add(fila.remove());
+
+                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account)
+                        .putExtra("status", STATUS).putExtra("fila", f)
+                        .putExtra("musicFile", musicFilesList).putExtra("art", currentArt)
+                        .putExtra("titles", titles).putExtra("albuns", albunsArt)
+                        .putExtra("songs", musicas).putExtra("activity_name", this.getClass().getName());
                 if(mp != null && mp.isPlaying()) {
-                    i.putExtra("art", currentArt).putExtra("mus", currentSong)
-                            .putExtra("media", (Parcelable) mp).putExtra("fila", (Parcelable) fila)
-                            .putExtra("status", STATUS);
+                    i.putExtra("mus", currentSong).putExtra("arts", artists);
                 }
-                startActivity(i);
+                startActivityForResult(i, 1);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
         });
@@ -209,6 +217,7 @@ public class Musicas extends AppCompatActivity {
             }
         };
 
+        STATUS = "NO MUSIC";
     }
 
 
@@ -236,9 +245,9 @@ public class Musicas extends AppCompatActivity {
                 llTitulo.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast.makeText(getBaseContext(), "Tocando musica " + titulo.get(position), Toast.LENGTH_SHORT).show();
-                        tvArtista.setText(artista.get(position));
-                        tvTitulo.setText(titulo.get(position));
+                        Toast.makeText(getBaseContext(), "Tocando musica " + titles.get(position), Toast.LENGTH_SHORT).show();
+                        tvArtista.setText(artists.get(position));
+                        tvTitulo.setText(titles.get(position));
                         playMusic(position);
                     }
                 });
@@ -256,14 +265,14 @@ public class Musicas extends AppCompatActivity {
 
             Uri u = Uri.parse(musicFilesList.get(position));
             pause.setImageResource(R.drawable.pause);
-            if (albumArt.get(position) != "") {
-                File imgfile = new File(albumArt.get(position));
+            if (albunsArt.get(position) != "") {
+                File imgfile = new File(albunsArt.get(position));
                 Bitmap myBitmap = BitmapFactory.decodeFile(imgfile.getAbsolutePath());
 
                 ivAlbum.setImageBitmap(myBitmap);
             }
-            currentArt = artista.get(position);
-            currentSong = titulo.get(position);
+            currentArt = artists.get(position);
+            currentSong = titles.get(position);
 
             mp = MediaPlayer.create(getApplicationContext(), u);
             mp.start();
@@ -315,9 +324,9 @@ public class Musicas extends AppCompatActivity {
                     currentAlbumArt = songCursor.getString(songAlbum);
                 musicas.add("Title: " + currentTitle + "\nArtist: " + currentArtist);
                 musicFilesList.add(currentLocation);
-                albumArt.add(currentAlbumArt);
-                titulo.add(currentTitle);
-                artista.add(currentArtist);
+                albunsArt.add(currentAlbumArt);
+                titles.add(currentTitle);
+                artists.add(currentArtist);
             }
             while (songCursor.moveToNext());
         }
@@ -344,10 +353,26 @@ public class Musicas extends AppCompatActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == 1)
+        {
+            Bundle b = getIntent().getExtras();
+
+            ArrayList<String> f = b.getStringArrayList("f");
+            if(f.size()>0) {
+
+                for (int j = 0; j < f.size(); j++)
+                    fila.add(f.get(j));
+            }
+        }
+    }
+
+    @Override
     public void finish()
     {
         super.finish();
         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
     }
-
 }
