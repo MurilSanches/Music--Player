@@ -45,10 +45,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if(account!=null)
-            startActivity(new Intent(this, Musicas.class).putExtra("acc", account));
-
         btnCadastrar = (Button) findViewById(R.id.btnCadastrar);
 
         btnCadastrar.setOnClickListener(new View.OnClickListener() {
