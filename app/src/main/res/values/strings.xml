@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Musica</string>
+    <string name="app_name">PlayListen</string>
     <string name="app_inicio">Music Player</string>
     <string name="hint_search">Barra de Pesquisar</string>
 </resources>

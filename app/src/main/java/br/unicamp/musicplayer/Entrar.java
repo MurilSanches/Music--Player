@@ -2,6 +2,7 @@ package br.unicamp.musicplayer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -11,9 +12,20 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.musicplayer.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -55,15 +67,46 @@ public class Entrar extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
-                    String email = tilEmail.getEditText().getText().toString().trim();
-                    String nome  = tilSenha.getEditText().getText().toString().trim();
+                    final String email = tilEmail.getEditText().getText().toString().trim();
+                    final String senha  = tilSenha.getEditText().getText().toString().trim();
 
+                    if(validateEmail() && validatePassword()) {
+                        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+                        db.collection("users")
+                                .get()
+                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                        if (task.isSuccessful()) {
+                                            QuerySnapshot queryDocument = task.getResult();
+                                            List<DocumentSnapshot> list = queryDocument.getDocuments();
 
+                                            Usuario u = null;
+                                            for(DocumentSnapshot d : list)
+                                            {
+                                                if(d.get("Email").equals(email) && d.get("Senha").equals(senha)) {
+                                                    Toast.makeText(getBaseContext(), "Entrando . . .", Toast.LENGTH_SHORT).show();
+                                                    u = new Usuario(d.get("Nome").toString(), d.get("Senha").toString(), d.get("Email").toString());
+                                                    break;
+                                                }
+                                            }
 
+                                            if(u == null) {
+                                                tilEmail.setError("Email não encontrado");
+                                                tilSenha.setError("Senha não encontrada");
+                                                Toast.makeText(getBaseContext(), "Email ou senha erradas", Toast.LENGTH_SHORT).show();
+                                            }
 
-
-                    Intent i = new Intent(Entrar.this, Musicas.class);
-                    startActivity(i);
+                                            else {
+                                                Intent i = new Intent(Entrar.this, Musicas.class).putExtra("user", u);
+                                                startActivity(i);
+                                            }
+                                        } else {
+                                            Toast.makeText(getBaseContext(), "Algum erro aconteceu", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
+                    }
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -71,12 +114,7 @@ public class Entrar extends AppCompatActivity {
             }
         });
 
-        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
 
-            }
-        };
     }
 
     private boolean validateEmail(){

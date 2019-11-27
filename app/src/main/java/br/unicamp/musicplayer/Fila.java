@@ -31,16 +31,18 @@ import java.util.Queue;
 public class Fila extends AppCompatActivity {
 
     private TextView tvLetras, tvMusicas, tvFila, tvUsuario;
-    private ListView lvMusicas;
-    private final LinkedList<String> fila = new LinkedList<>();
+    private ListView lvFila;
+    private LinkedList<String> fila = new LinkedList<>();
     private SeekBar seekBar;
     private String STATUS;
     private MediaPlayer mp;
     private String currentArt, currentSong;
     private ImageView ivPause, ivAlbum;
     private Thread updateSeekBar;
-    private ArrayList<String> artistas, titles, musicFilesList, albunsArt, musicas;
+    private ArrayList<String> artistas, titles, musicFilesList, albunsArt, musicas, f;
     private String className;
+    private Usuario u;
+    private GoogleSignInAccount account;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,13 +50,11 @@ public class Fila extends AppCompatActivity {
         setContentView(R.layout.activity_fila);
 
         try {
-
-
-
             tvLetras = findViewById(R.id.tvLetra);
             tvMusicas = findViewById(R.id.tvMusicas);
             tvUsuario = findViewById(R.id.tvUsuario);
-            lvMusicas = findViewById(R.id.lvMusicas);
+
+            lvFila = findViewById(R.id.lvFila);
             ivPause = findViewById(R.id.ivPause);
             ivAlbum = findViewById(R.id.ivImagemMusica);
 
@@ -71,7 +71,7 @@ public class Fila extends AppCompatActivity {
 
                 @Override
                 public void onStopTrackingTouch(SeekBar seekBar) {
-                    if(mp != null)
+                    if (mp != null)
                         mp.seekTo(seekBar.getProgress());
                 }
             });
@@ -86,17 +86,23 @@ public class Fila extends AppCompatActivity {
 
             className = b.getString("activity_name");
 
-            final GoogleSignInAccount account = (GoogleSignInAccount) b.get("acc");
-            tvUsuario.setText("Bem vindo, " + account.getDisplayName());
+            if(b.get("acc") != null) {
+                account = (GoogleSignInAccount) b.get("acc");
+                tvUsuario.setText("Bem  vindo, " + account.getDisplayName());
+            }
+            else {
+                u = (Usuario) b.get("user");
+                tvUsuario.setText("Bem vindo, " + u.getNome());
+            }
 
 
-            ArrayList<String> f = b.getStringArrayList("fila");
+            f = b.getStringArrayList("fila");
             if (f.size() > 0) {
 
                 for (int j = 0; j < f.size(); j++)
                     fila.addLast(f.get(j));
                 FilaAdapter adapter = new FilaAdapter(this, fila);
-                lvMusicas.setAdapter(adapter);
+                lvFila.setAdapter(adapter);
             }
 
             if (!b.isEmpty()) {
@@ -118,130 +124,118 @@ public class Fila extends AppCompatActivity {
             }
 
 
-        tvMusicas.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    ArrayList<String> f = new ArrayList<String>();
-                    while (fila.size() > 0)
-                        f.add(fila.remove());
+            tvMusicas.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
                     Intent i = new Intent(Fila.this, Musicas.class)
-                            .putExtra("acc", account).putExtra("f", f);
-                    if (className.equals("br.unicamp.musicplayer.Musicas$3"))
-                        finish();
+                            .putExtra("fila", f)
+                            .putExtra("activity_name", this.getClass().getName());
+                    if (u == null)
+                    {
+                        i.putExtra("acc", account);
+                    }
                     else
-                        startActivity(i);
-                    overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        tvLetras.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    Intent i = new Intent(Fila.this, Letras.class).putExtra("acc", account);
+                        i.putExtra("user", u);
                     startActivity(i);
                     overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
                 }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
+            });
 
-        ivPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    if (mp != null) {
-                        ImageView iv = findViewById(R.id.ivPause);
-                        if (mp.isPlaying()) {
-                            Toast.makeText(getBaseContext(), "Musica Pausada", Toast.LENGTH_SHORT).show();
-                            mp.pause();
-                            STATUS = "PAUSE";
-                            iv.setImageResource(R.drawable.play);
-                        } else {
-                            mp.start();
-                            Toast.makeText(getBaseContext(), "Tocando Musica", Toast.LENGTH_SHORT).show();
-                            STATUS = "PLAY";
-                            iv.setImageResource(R.drawable.pause);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        updateSeekBar = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    do {
-
-                        int totalDuration = mp.getDuration();
-                        int currentPosition = 0, lastPosition = -1;
-
-                        while (currentPosition < totalDuration) {
-                            try {
-                                sleep(500);
-                                currentPosition = mp.getCurrentPosition();
-                                seekBar.setProgress(currentPosition);
-                                if(!mp.isPlaying() && !STATUS.equals("PAUSE") && currentPosition == lastPosition)
-                                    break;
-                                lastPosition = currentPosition;
-                            }
-                            catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        seekBar.setProgress(0);
-                        if (fila.size() > 0) {
-                            String song = fila.remove();
-
-                            int pos = getMusicPosition(song);
-                            playMusic(pos);
-                        }
-                    }
-                    while (mp.isPlaying());
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        try {
-            lvMusicas = findViewById(R.id.lvMusicas);
-            lvMusicas.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            tvLetras.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                public void onClick(View v) {
+                    Intent i = new Intent(Fila.this, Letras.class)
+                            .putExtra("status", STATUS).putExtra("fila", f)
+                            .putExtra("musicFile", musicFilesList).putExtra("art", currentArt)
+                            .putExtra("titles", titles).putExtra("albuns", albunsArt)
+                            .putExtra("songs", musicas).putExtra("activity_name", this.getClass().getName());
+                    if (u == null)
+                    {
+                        i.putExtra("acc", account);
+                    }
+                    else
+                        i.putExtra("user", u);
+                    if(mp != null && mp.isPlaying()) {
+                        i.putExtra("mus", currentSong).putExtra("arts", artistas);
+                    }
+                    startActivity(i);
+                    overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+                }
+            });
+
+            ivPause.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
                     try {
-                        final ImageView ivRemove = view.findViewById(R.id.ivRemove);
-                        ivRemove.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                fila.remove(position);
-                                Toast.makeText(getBaseContext(), "Música removida da lista", Toast.LENGTH_SHORT).show();
+                        if (mp != null) {
+                            ImageView iv = findViewById(R.id.ivPause);
+                            if (mp.isPlaying()) {
+                                Toast.makeText(getBaseContext(), "Musica Pausada", Toast.LENGTH_SHORT).show();
+                                mp.pause();
+                                STATUS = "PAUSE";
+                                iv.setImageResource(R.drawable.play);
+                            } else {
+                                mp.start();
+                                Toast.makeText(getBaseContext(), "Tocando Musica", Toast.LENGTH_SHORT).show();
+                                STATUS = "PLAY";
+                                iv.setImageResource(R.drawable.pause);
                             }
-                        });
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             });
-        }
-        catch (Exception e)
-        {e.printStackTrace();}
+
+            updateSeekBar = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        do {
+
+                            int totalDuration = mp.getDuration();
+                            int currentPosition = 0, lastPosition = -1;
+
+                            while (currentPosition < totalDuration) {
+                                try {
+                                    sleep(500);
+                                    currentPosition = mp.getCurrentPosition();
+                                    seekBar.setProgress(currentPosition);
+                                    if (!mp.isPlaying() && !STATUS.equals("PAUSE") && currentPosition == lastPosition)
+                                        break;
+                                    lastPosition = currentPosition;
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            seekBar.setProgress(0);
+                            if (fila.size() > 0) {
+                                String song = fila.remove();
+
+                                int pos = getMusicPosition(song);
+                                playMusic(pos);
+                            }
+                        }
+                        while (mp.isPlaying());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+
+            lvFila.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                    final ImageView ivRemove = view.findViewById(R.id.ivRemove);
+                    ivRemove.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            fila.remove(position);
+                            Toast.makeText(getBaseContext(), "Música removida da lista", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
         }
         catch (Exception e)
         {

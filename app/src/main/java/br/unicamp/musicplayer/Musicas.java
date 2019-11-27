@@ -47,7 +47,7 @@ public class Musicas extends AppCompatActivity {
 
     private static final int MY_PERMISSION_REQUEST = 1;
     private ListView lvMusicas;
-    private ArrayList<String> musicas, titles, artists, musicFilesList, albunsArt;
+    private ArrayList<String> musicas, titles, artists, musicFilesList, albunsArt, f;
     private LinkedList<String> fila;
     private String currentArt, currentSong;
     private TextView tvLetras, tvMusicas, tvFila, tvUsuario, tvTitulo, tvArtista;
@@ -58,6 +58,8 @@ public class Musicas extends AppCompatActivity {
     private ImageView pause;
     private String STATUS;
     private int currentPosition;
+    private Usuario u;
+    private GoogleSignInAccount account;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,8 +108,21 @@ public class Musicas extends AppCompatActivity {
         Intent i = getIntent();
         Bundle b = i.getExtras();
 
-        final GoogleSignInAccount account =  (GoogleSignInAccount) b.get("acc");
-        tvUsuario.setText("Bem  vindo, " + account.getDisplayName());
+        if(b.get("acc") != null) {
+            account = (GoogleSignInAccount) b.get("acc");
+            tvUsuario.setText("Bem  vindo, " + account.getDisplayName());
+        }
+        else {
+            u = (Usuario) b.get("user");
+            tvUsuario.setText("Bem vindo, " + u.getNome());
+        }
+
+        if(b.getString("activity_name") != null) {
+            f = b.getStringArrayList("fila");
+            if (f.size() > 0)
+                for (int j = 0; j < f.size(); j++)
+                    fila.addLast(f.get(j));
+        }
 
         tvLetras.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -116,16 +131,22 @@ public class Musicas extends AppCompatActivity {
                 while (fila.size()>0)
                     f.add(fila.remove());
 
-                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account)
+                Intent i = new Intent(Musicas.this, Letras.class)
                         .putExtra("status", STATUS).putExtra("fila", f)
                         .putExtra("musicFile", musicFilesList).putExtra("art", currentArt)
                         .putExtra("titles", titles).putExtra("albuns", albunsArt)
                         .putExtra("songs", musicas).putExtra("activity_name", this.getClass().getName())
-                        .putExtra("duration", mp.getDuration()).putExtra("pos", currentPosition);
-                if(mp != null && mp.isPlaying()) {
-                    i.putExtra("mus", currentSong).putExtra("arts", artists);
+                        .putExtra("pos", currentPosition);
+                if (u == null)
+                {
+                    i.putExtra("acc", account);
                 }
-                i.putExtra("acc", account);
+                else
+                    i.putExtra("user", u);
+                if(mp != null && mp.isPlaying()) {
+                    i.putExtra("mus", currentSong).putExtra("arts", artists)
+                    .putExtra("duration", mp.getDuration());
+                }
                 startActivityForResult(i, 2);
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
@@ -136,13 +157,19 @@ public class Musicas extends AppCompatActivity {
             public void onClick(View v) {
                 ArrayList<String> f = new ArrayList<>();
                 while (fila.size()>0)
-                    f.add(fila.remove());
+                    f.add(fila.removeFirst());
 
-                Intent i = new Intent(Musicas.this, Fila.class).putExtra("acc", account)
+                Intent i = new Intent(Musicas.this, Fila.class)
                         .putExtra("status", STATUS).putExtra("fila", f)
                         .putExtra("musicFile", musicFilesList).putExtra("art", currentArt)
                         .putExtra("titles", titles).putExtra("albuns", albunsArt)
                         .putExtra("songs", musicas).putExtra("activity_name", this.getClass().getName());
+                if (u == null)
+                {
+                    i.putExtra("acc", account);
+                }
+                else
+                    i.putExtra("user", u);
                 if(mp != null && mp.isPlaying()) {
                     i.putExtra("mus", currentSong).putExtra("arts", artists);
                 }

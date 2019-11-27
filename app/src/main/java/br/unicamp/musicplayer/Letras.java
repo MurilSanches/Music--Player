@@ -31,11 +31,14 @@ import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Letras extends AppCompatActivity {
 
     private TextView tvLetras, tvMusicas, tvFila, tvLetra, tvUsuario, tvArtista, tvTitulo;
-    private ArrayList<String> musicFile, artists, titles, songs, albuns;
+    private ArrayList<String> musicFile, artists, titles, songs, albuns, f;
+    private LinkedList<String> fila;
     private String currentArt, currentSong;
     private int currentPosition;
     private Thread updateSeekBar;
@@ -44,6 +47,8 @@ public class Letras extends AppCompatActivity {
     private ImageView ivAlbum, ivPause;
     private String className;
     private String STATUS;
+    private Usuario u;
+    private GoogleSignInAccount account;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +61,8 @@ public class Letras extends AppCompatActivity {
             tvUsuario = findViewById(R.id.tvUsuario);
             ivAlbum = findViewById(R.id.ivImagemMusica);
             ivPause = findViewById(R.id.ivPause);
+
+            fila = new LinkedList<>();
 
             tvLetras = (TextView) findViewById(R.id.tvLetra);
             SpannableString content = new SpannableString("Letra");
@@ -88,8 +95,15 @@ public class Letras extends AppCompatActivity {
 
             className = b.getString("activity_name");
 
-            final GoogleSignInAccount account = (GoogleSignInAccount) b.get("acc");
-            tvUsuario.setText("Bem vindo, " + account.getDisplayName());
+
+            if(b.get("acc") != null) {
+                account = (GoogleSignInAccount) b.get("acc");
+                tvUsuario.setText("Bem  vindo, " + account.getDisplayName());
+            }
+            else {
+                u = (Usuario) b.get("user");
+                tvUsuario.setText("Bem vindo, " + u.getNome());
+            }
 
             ivPause.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -115,7 +129,14 @@ public class Letras extends AppCompatActivity {
             tvMusicas.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent i = new Intent(Letras.this, Musicas.class).putExtra("acc", account);
+                    Intent i = new Intent(Letras.this, Musicas.class)
+                            .putExtra("status", STATUS).putExtra("fila", f).putExtra("activity_name", this.getClass().getName());
+                    if (u == null)
+                    {
+                        i.putExtra("acc", account);
+                    }
+                    else
+                        i.putExtra("user", u);
                     startActivity(i);
                     overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
                 }
@@ -124,7 +145,22 @@ public class Letras extends AppCompatActivity {
             tvFila.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent i = new Intent(Letras.this, Fila.class).putExtra("acc", account);
+                    Intent i = new Intent(Letras.this, Fila.class)
+                            .putExtra("status", STATUS).putExtra("fila", f)
+                            .putExtra("musicFile", musicFile).putExtra("art", currentArt)
+                            .putExtra("titles", titles).putExtra("albuns", albuns)
+                            .putExtra("songs", songs).putExtra("activity_name", this.getClass().getName())
+                            .putExtra("pos", currentPosition);
+                    if (u == null)
+                    {
+                        i.putExtra("acc", account);
+                    }
+                    else
+                        i.putExtra("user", u);
+                    if(mp != null && mp.isPlaying()) {
+                        i.putExtra("mus", currentSong).putExtra("arts", artists);
+                    }
+
                     startActivity(i);
                     overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
                 }
@@ -136,9 +172,12 @@ public class Letras extends AppCompatActivity {
 
             if(!b.isEmpty()){
 
-                if(className.equals("br.unicamp.musicplayer.Musicas$3")) {
                     String art = b.getString("art");
                     String mus = b.getString("mus");
+
+                    f = b.getStringArrayList("fila");
+                    for(int j =0; j < f.size(); j++)
+                        fila.add(f.get(j));
 
                     songs = b.getStringArrayList("songs");
                     albuns = b.getStringArrayList("albuns");
@@ -152,11 +191,12 @@ public class Letras extends AppCompatActivity {
 
                     if(!STATUS.equals("NO MUSIC")){
                         pesquisarMusica(art, mus);
-                        tocarMusica(songs, albuns, titles, artists, duration, pos);
+                        //tocarMusica(songs, albuns, titles, artists, duration, pos);
                     }
-                }
-
+                    else
+                        tvLetra.setText("Nenhuma musica tocando");
             }
+
 
             ImageView pause = findViewById(R.id.ivPause);
 
